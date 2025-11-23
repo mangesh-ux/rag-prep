@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-prep"
+version = "0.1.1"
+description = "A minimal, extensible framework for preparing documents for RAG/LLM workflows"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "rag-prep contributors"}
+]
+keywords = ["rag", "llm", "document-processing", "chunking", "nlp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "tiktoken>=0.5.0",
+]
+
+[project.optional-dependencies]
+pdf = ["PyPDF2>=3.0.0"]
+docx = ["python-docx>=1.0.0"]
+html = ["beautifulsoup4>=4.12.0"]
+all = [
+    "PyPDF2>=3.0.0",
+    "python-docx>=1.0.0",
+    "beautifulsoup4>=4.12.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "PyPDF2>=3.0.0",
+    "python-docx>=1.0.0",
+    "beautifulsoup4>=4.12.0",
+]
+
+[project.scripts]
+rag-prep = "rag_prep.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rag_prep*"]
+
+[tool.setuptools.package-data]
+rag_prep = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
