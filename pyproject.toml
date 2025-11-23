@@ -45,6 +45,11 @@ dev = [
     "beautifulsoup4>=4.12.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mangesh-ux/rag-prep"
+Source = "https://github.com/mangesh-ux/rag-prep"
+Issues = "https://github.com/mangesh-ux/rag-prep/issues"
+
 [project.scripts]
 rag-prep = "rag_prep.cli:main"
 

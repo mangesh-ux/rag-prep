@@ -37,6 +37,8 @@ pip install rag-prep[all]
 
 ### Python API
 
+The source path can be a single file or a directory; directories are walked recursively by default, respecting include/exclude filters.
+
 ```python
 from rag_prep import prepare_docs, prepare_docs_to_jsonl, Config
 
@@ -54,8 +56,6 @@ config = Config(
 prepare_docs_to_jsonl("document.txt", "output.jsonl", config=config)
 
 # Get chunks as iterator (for custom processing)
-from rag_prep import prepare_docs
-
 for chunk in prepare_docs("document.txt", config=config):
     print(chunk.text)
     print(chunk.metadata)
@@ -102,7 +102,7 @@ class MyCustomChunker:
     def chunk(self, text: str, metadata: dict) -> Iterator[Chunk]:
         # Your custom chunking logic
         # ...
-        yield Chunk(text=chunk_text, metadata=chunk_metadata)
+        yield Chunk(text=chunk_text, metadata=chunk_metadata, chunk_id="custom_id")
 ```
 
 Use it in Python:
@@ -126,15 +126,22 @@ rag-prep doc.txt -o out.jsonl --chunk-strategy mypackage.MyCustomChunker
 Register a loader for a new file type:
 
 ```python
-from rag_prep.loaders import Loader, register_loader, TextLoader
+from rag_prep.loaders import register_loader
+from rag_prep.models import Chunk
+from pathlib import Path
 
 class JSONLoader:
     def load(self, source):
         import json
-        with open(source, 'r') as f:
+        path = Path(source)
+        with open(path, 'r') as f:
             data = json.load(f)
             # Convert to Chunk objects
-            yield Chunk(text=str(data), metadata={"source": source})
+            yield Chunk(
+                text=str(data), 
+                metadata={"source": str(path), "file_type": "json"},
+                chunk_id=str(path)
+            )
 
 # Register for .json files
 register_loader(".json", JSONLoader())
@@ -164,7 +171,7 @@ Add metadata hooks to enrich chunks:
 ```python
 from rag_prep import Config, prepare_docs
 
-def add_timestamp(metadata, text):
+def add_timestamp(metadata: dict, text: str) -> dict:
     import datetime
     metadata["processed_at"] = datetime.datetime.now().isoformat()
     return metadata
@@ -200,7 +207,7 @@ chunks = prepare_docs("doc.txt", config=config, tokenizer=tokenizer)
 ### Chunking Strategies
 
 - **`character`** - Character-based chunking (default)
-- **`token`** - Token-based chunking (requires tokenizer)
+- **`token`** - Token-based chunking (requires tokenizer). If you choose a token-based strategy without providing a tokenizer, rag_prep will use its default tokenizer if available, otherwise it will raise a clear error.
 - **`sentence`** - Sentence-aware chunking
 - **`none`** - No chunking (entire document as single chunk)
 
@@ -221,6 +228,13 @@ Default output is JSONL (JSON Lines), where each line is a chunk:
 {"text": "chunk text...", "metadata": {"source_id": "doc.txt", "chunk_index": 0}, "chunk_id": "doc.txt_chunk_0"}
 {"text": "next chunk...", "metadata": {"source_id": "doc.txt", "chunk_index": 1}, "chunk_id": "doc.txt_chunk_1"}
 ```
+
+## Use Cases
+
+- **Prepare a docs/ folder for ingestion into a vector database** - Process entire directories of mixed file types into chunked JSONL format ready for embedding and indexing.
+- **Convert mixed PDFs + DOCX + markdown into JSONL for RAG** - Handle diverse document formats and output a standardized chunked format for retrieval-augmented generation pipelines.
+- **Generate chunked datasets suitable for fine-tuning or eval** - Create properly chunked datasets with metadata for training or evaluating language models.
+- **Stream processing for large document collections** - Use iterator-based processing to handle large directories without loading everything into memory.
 
 ## Architecture
 
